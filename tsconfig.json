@@ -1,7 +1,7 @@
 {
 	"compileOnSave": false,
 	"compilerOptions": {
-		"target": "ES2018",
+		"target": "ES2016",
 		"module": "CommonJS",
 		"moduleResolution": "node",
 		"esModuleInterop": true,
@@ -14,7 +14,7 @@
 		"noUnusedParameters": false,
 		"removeComments": false,
 		"sourceMap": true,
-		"lib": ["ES2018", "DOM"],
+		"lib": ["ES2016", "DOM"],
 		"outDir": "build",
 		"declaration": true
 	},
