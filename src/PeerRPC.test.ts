@@ -75,8 +75,10 @@ describe("PeerRPC", () => {
 
 	it("throw an error if there are no listeners", async () => {
 		const { a, b } = setupPeers()
+
 		b.answer.add = (x, y) => x + y
 		assert.equal(await a.call.add(10, 2), 12)
+
 		await assert.rejects(() => a.call.double(10))
 	})
 

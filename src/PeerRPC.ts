@@ -48,7 +48,22 @@ export class PeerRPC<
 
 	private async handleRequest(message: RPCRequestMessage) {
 		const answerer = this.answer[message.fn] as any
-		if (!answerer) throw new Error("No answerer for " + message.fn)
+
+		const handleError = async (error: Error) => {
+			const response: RPCResponseMessage = {
+				type: "response",
+				id: message.id,
+				fn: message.fn,
+				error: serializeError(error),
+			}
+			await this.config.send(response)
+		}
+
+		if (!answerer) {
+			const error = new Error("No answerer for " + message.fn)
+			return handleError(error)
+		}
+
 		try {
 			const data = await answerer(...message.args)
 			const response: RPCResponseMessage = {
@@ -59,13 +74,7 @@ export class PeerRPC<
 			}
 			await this.config.send(response)
 		} catch (error) {
-			const response: RPCResponseMessage = {
-				type: "response",
-				id: message.id,
-				fn: message.fn,
-				error: serializeError(error),
-			}
-			await this.config.send(response)
+			return handleError(error)
 		}
 	}
 
