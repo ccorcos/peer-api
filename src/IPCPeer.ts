@@ -1,5 +1,10 @@
-import { createProxy } from "./proxyHelpers"
-import { Answerer, AnyFunction, AnyFunctionMap, Caller } from "./typeHelpers"
+import { createProxy } from "./helpers/proxyHelpers"
+import {
+	Answerer,
+	AnyFunction,
+	AnyFunctionMap,
+	Caller,
+} from "./helpers/typeHelpers"
 
 type IPCRequestMessage = {
 	type: "request"

@@ -1,9 +1,8 @@
 import { strict as assert } from "assert"
 import EventEmitter from "events"
 import { after, describe, it } from "mocha"
-import { sleep } from "./helpers/sleep"
 import { AnyFunctionMap } from "./helpers/typeHelpers"
-import { IPCPeer } from "./IPCPeer"
+import { PeerRPC } from "./PeerRPC"
 
 function setupPeers<
 	A2B extends AnyFunctionMap = AnyFunctionMap,
@@ -12,7 +11,7 @@ function setupPeers<
 	const aEvents = new EventEmitter()
 	const bEvents = new EventEmitter()
 
-	const a = new IPCPeer<A2B, B2A>({
+	const a = new PeerRPC<A2B, B2A>({
 		send: (message) => {
 			bEvents.emit("event", message)
 		},
@@ -22,7 +21,7 @@ function setupPeers<
 		},
 	})
 
-	const b = new IPCPeer<B2A, A2B>({
+	const b = new PeerRPC<B2A, A2B>({
 		send: (message) => {
 			aEvents.emit("event", message)
 		},
@@ -35,7 +34,7 @@ function setupPeers<
 	return { a, b }
 }
 
-describe("IPCPeer", () => {
+describe("PeerRPC", () => {
 	it("works", async () => {
 		const { a, b } = setupPeers()
 
@@ -68,42 +67,6 @@ describe("IPCPeer", () => {
 	})
 
 	it.skip("Throws an error if you try to answer more than once", async () => {})
-
-	it("Subscribes", async () => {
-		type A = {
-			count(n: number, cb: (count: number) => void): () => void
-		}
-
-		type B = {}
-
-		const { a, b } = setupPeers<A, B>()
-
-		const stopB = b.answer.count((initialCount, cb) => {
-			let n = initialCount
-			const timerId = setInterval(() => {
-				n += 1
-				cb(n)
-			}, 1)
-
-			return () => {
-				clearInterval(timerId)
-			}
-		})
-
-		const results: number[] = []
-		const unsub = await a.call.count(12, (n) => {
-			results.push(n)
-		})
-		assert.equal(typeof unsub, "function")
-		await sleep(10)
-		unsub()
-
-		const len = results.length
-		assert.deepEqual(results.slice(0, 5), [13, 14, 15, 16, 17])
-		await sleep(10)
-
-		assert.equal(len, results.length)
-	})
 
 	it("Deserializes error with combined stack traces.", async () => {
 		type A = {
