@@ -1,4 +1,3 @@
-import { deserializeError, serializeError } from "serialize-error"
 import { createProxy } from "./proxyHelpers"
 import { Answerer, AnyFunction, AnyFunctionMap, Caller } from "./typeHelpers"
 
@@ -217,4 +216,13 @@ export class IPCPeer<
 
 function isFunction(f: unknown): f is AnyFunction {
 	return typeof f === "function"
+}
+
+function deserializeError({ message, stack }) {
+	const error = new Error(message)
+	error.stack = stack
+	return error
+}
+function serializeError(error) {
+	return { message: error.message, stack: error.stack }
 }

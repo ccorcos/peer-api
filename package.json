@@ -17,9 +17,6 @@
 	"keywords": [],
 	"author": "Chet Corcos <ccorcos@gmail.com>",
 	"license": "MIT",
-	"dependencies": {
-		"serialize-error": "^11.0.0"
-	},
 	"devDependencies": {
 		"@types/mocha": "whitecolor/mocha-types",
 		"@types/node": "^17.0.42",
