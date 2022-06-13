@@ -1,9 +1,9 @@
 {
-	"name": "ipc-peer",
+	"name": "peer-api",
 	"version": "0.0.1",
 	"description": "A library for abstracting RPC and Pub/Sub over a socket.",
 	"repository": {
-		"url": "https://github.com/ccorcos/ipc-peer"
+		"url": "https://github.com/ccorcos/peer-api"
 	},
 	"main": "build/src/index.js",
 	"scripts": {

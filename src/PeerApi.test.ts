@@ -1,0 +1,81 @@
+import { strict as assert } from "assert"
+import EventEmitter from "events"
+import { describe, it } from "mocha"
+import { sleep } from "./helpers/sleep"
+import { AnyFunctionMap } from "./helpers/typeHelpers"
+import { PeerApi } from "./PeerApi"
+
+function setupPeers<
+	A2B extends AnyFunctionMap = AnyFunctionMap,
+	B2A extends AnyFunctionMap = AnyFunctionMap
+>() {
+	const aEvents = new EventEmitter()
+	const bEvents = new EventEmitter()
+
+	const a = new PeerApi<A2B, B2A>({
+		send: (message) => {
+			bEvents.emit("event", message)
+		},
+		listen: (callback) => {
+			aEvents.on("event", callback)
+			return () => aEvents.off("event", callback)
+		},
+	})
+
+	const b = new PeerApi<B2A, A2B>({
+		send: (message) => {
+			aEvents.emit("event", message)
+		},
+		listen: (callback) => {
+			bEvents.on("event", callback)
+			return () => bEvents.off("event", callback)
+		},
+	})
+
+	return { a, b }
+}
+
+describe("PeerApi", () => {
+	it("works", async () => {
+		type A = {
+			add(a: number, b: number): number
+			increment(n: number, cb: (count: number) => void): () => void
+		}
+
+		type B = {
+			double(a: number): number
+			decrement(n: number, cb: (count: number) => void): () => void
+		}
+
+		const { a, b } = setupPeers<A, B>()
+
+		b.answer.add = (a, b) => a + b
+		b.publish.increment = (initialCount, cb) => {
+			let n = initialCount
+			const timerId = setInterval(() => cb(++n), 1)
+			return () => clearInterval(timerId)
+		}
+
+		a.answer.double = (a) => a + a
+		a.publish.decrement = (initialCount, cb) => {
+			let n = initialCount
+			const timerId = setInterval(() => cb(--n), 1)
+			return () => clearInterval(timerId)
+		}
+
+		assert.equal(await a.call.add(10, 2), 12)
+
+		const incs: number[] = []
+		const unsubInc = await a.subscribe.increment(12, (n) => incs.push(n))
+		await sleep(10)
+		await unsubInc()
+		assert.deepEqual(incs.slice(0, 5), [13, 14, 15, 16, 17])
+
+		assert.equal(await b.call.double(10), 20)
+		const decs: number[] = []
+		const unsubDec = await b.subscribe.decrement(12, (n) => decs.push(n))
+		await sleep(10)
+		await unsubDec()
+		assert.deepEqual(decs.slice(0, 5), [11, 10, 9, 8, 7])
+	})
+})
