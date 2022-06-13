@@ -1,6 +1,6 @@
 import { DeferredPromise } from "./helpers/DeferredPromise"
 import { deserializeError, serializeError } from "./helpers/errorHelpers"
-import { createProxy } from "./helpers/proxyHelpers"
+import { createFunctionProxy } from "./helpers/proxyHelpers"
 import {
 	Answerer,
 	AnyFunction,
@@ -121,11 +121,11 @@ export class PeerRPC<
 		return () => delete this.answerers[fn]
 	}
 
-	call = createProxy<Caller<CallAPI>>((fn: any, ...args: any) =>
+	call = createFunctionProxy<Caller<CallAPI>>((fn: any, ...args: any) =>
 		this.callFn(fn, ...args)
 	)
 
-	answer = createProxy<Answerer<AnswerAPI>>((fn: any, callback: any) =>
+	answer = createFunctionProxy<Answerer<AnswerAPI>>((fn: any, callback: any) =>
 		this.answerFn(fn, callback)
 	)
 

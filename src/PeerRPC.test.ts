@@ -45,9 +45,6 @@ describe("PeerRPC", () => {
 		assert.equal(await b.callFn("double", 10), 20)
 	})
 
-	it.skip("Stop listening works", async () => {})
-	it.skip("Destroy works", async () => {})
-
 	it("Works with proxy types", async () => {
 		type A = {
 			add(x: number, y: number): number
@@ -59,12 +56,20 @@ describe("PeerRPC", () => {
 
 		const { a, b } = setupPeers<A, B>()
 
-		const stopB = b.answer.add((x, y) => x + y)
-		const stopA = a.answer.double((x) => x + x)
+		after(b.answer.add((x, y) => x + y))
+		after(a.answer.double((x) => x + x))
 
 		assert.equal(await a.call.add(10, 2), 12)
 		assert.equal(await b.call.double(10), 20)
 	})
+
+	it("Throws an error if you try to add two answerers", () => {
+		const { a, b } = setupPeers()
+		a.answer.something(() => {})
+	})
+
+	it.skip("Stop listening works", async () => {})
+	it.skip("Destroy works", async () => {})
 
 	it.skip("Throws an error if you try to answer more than once", async () => {})
 

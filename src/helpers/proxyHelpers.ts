@@ -1,7 +1,7 @@
 import { AnyFunction } from "./typeHelpers"
 
 /** Warning: this is not soundly typed. */
-export function createProxy<K extends { [key: string]: AnyFunction }>(
+export function createFunctionProxy<K extends { [key: string]: AnyFunction }>(
 	fn: (key: keyof K, ...args: any[]) => any
 ) {
 	return new Proxy(
