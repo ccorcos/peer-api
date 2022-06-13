@@ -79,3 +79,55 @@ describe("PeerApi", () => {
 		assert.deepEqual(decs.slice(0, 5), [11, 10, 9, 8, 7])
 	})
 })
+
+// Process A wants to be able to call rpcB and subscribeB in process B.
+type A = {
+	rpcB(arg: number): number
+
+	// A subscription is defined as a function with a callback and a returned function
+	// for unsubscribing.
+	subscribeB(cb: (value: number) => void): () => void
+}
+
+// Process B wants to be able to call rpcA and subscribeA in process A.
+type B = {
+	rpcA(arg: string): string
+	subscribeA(cb: (value: string) => void): () => void
+}
+
+// Wire up each process to communicate with each other.
+// We'll use EventEmitter to simulate an actual socket.
+const aEvents = new EventEmitter()
+const bEvents = new EventEmitter()
+
+const a = new PeerApi<A, B>({
+	send: (message) => {
+		bEvents.emit("event", message)
+	},
+	listen: (callback) => {
+		aEvents.on("event", callback)
+		return () => aEvents.off("event", callback)
+	},
+})
+
+const b = new PeerApi<B, A>({
+	send: (message) => {
+		aEvents.emit("event", message)
+	},
+	listen: (callback) => {
+		bEvents.on("event", callback)
+		return () => bEvents.off("event", callback)
+	},
+})
+
+b.answer.rpcB = (x) => x + x
+b.publish.subscribeB = (cb) => {
+	const timerId = setInterval(() => cb(0), 1)
+	return () => clearInterval(timerId)
+}
+
+a.answer.rpcA = (x) => x + a
+a.publish.subscribeA = (cb) => {
+	const timerId = setInterval(() => cb("hello"), 1)
+	return () => clearInterval(timerId)
+}
