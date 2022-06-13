@@ -1,6 +1,6 @@
 import { createFunctionProxy } from "./helpers/proxyHelpers"
 import {
-	Answerer,
+	Answerer2,
 	AnyFunction,
 	AnyFunctionMap,
 	Caller,
@@ -61,7 +61,7 @@ export class IPCPeer<
 		this.callFn(fn, ...args)
 	)
 
-	answer = createFunctionProxy<Answerer<AnswerAPI>>((fn: any, callback: any) =>
+	answer = createFunctionProxy<Answerer2<AnswerAPI>>((fn: any, callback: any) =>
 		this.answerFn(fn, callback)
 	)
 

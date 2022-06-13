@@ -47,7 +47,7 @@ export class PeerRPC<
 	}
 
 	private async handleRequest(message: RPCRequestMessage) {
-		const answerer = this.answerers[message.fn]
+		const answerer = this.answer[message.fn] as any
 		if (!answerer) throw new Error("No answerer for " + message.fn)
 		try {
 			const data = await answerer(...message.args)
@@ -113,24 +113,14 @@ export class PeerRPC<
 		return response.data
 	}
 
-	private answerers: Record<string, AnyFunction> = {}
-
-	answerFn(fn: string, callback: AnyFunction) {
-		if (this.answerers[fn]) throw new Error("Already answering " + fn)
-		this.answerers[fn] = callback
-		return () => delete this.answerers[fn]
-	}
-
 	call = createFunctionProxy<Caller<CallAPI>>((fn: any, ...args: any) =>
 		this.callFn(fn, ...args)
 	)
 
-	answer = createFunctionProxy<Answerer<AnswerAPI>>((fn: any, callback: any) =>
-		this.answerFn(fn, callback)
-	)
+	answer: Partial<Answerer<AnswerAPI>> = {}
 
 	destroy() {
-		this.answerers = {}
+		this.answer = {}
 		if (this.stopListeners) this.stopListeners()
 	}
 }

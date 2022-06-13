@@ -15,5 +15,9 @@ export type Caller<T extends AnyFunctionMap> = {
 }
 
 export type Answerer<T extends AnyFunctionMap> = {
+	[K in keyof T]: Syncify<T[K]> | Asyncify<T[K]>
+}
+
+export type Answerer2<T extends AnyFunctionMap> = {
 	[K in keyof T]: (fn: Syncify<T[K]> | Asyncify<T[K]>) => () => void
 }

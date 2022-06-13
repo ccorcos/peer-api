@@ -1,6 +1,6 @@
 import { strict as assert } from "assert"
 import EventEmitter from "events"
-import { after, describe, it } from "mocha"
+import { describe, it } from "mocha"
 import { AnyFunctionMap } from "./helpers/typeHelpers"
 import { PeerRPC } from "./PeerRPC"
 
@@ -38,14 +38,24 @@ describe("PeerRPC", () => {
 	it("works", async () => {
 		const { a, b } = setupPeers()
 
-		after(b.answerFn("add", (x, y) => x + y))
-		after(a.answerFn("double", (x) => x + x))
+		b.answer.add = (x, y) => x + y
+		a.answer.double = (x) => x + x
 
 		assert.equal(await a.callFn("add", 10, 2), 12)
 		assert.equal(await b.callFn("double", 10), 20)
 	})
 
-	it("Works with proxy types", async () => {
+	it("works with proxies too", async () => {
+		const { a, b } = setupPeers()
+
+		b.answer.add = (x, y) => x + y
+		a.answer.double = (x) => x + x
+
+		assert.equal(await a.call.add(10, 2), 12)
+		assert.equal(await b.call.double(10), 20)
+	})
+
+	it("works with proxy types", async () => {
 		type A = {
 			add(x: number, y: number): number
 		}
@@ -56,40 +66,49 @@ describe("PeerRPC", () => {
 
 		const { a, b } = setupPeers<A, B>()
 
-		after(b.answer.add((x, y) => x + y))
-		after(a.answer.double((x) => x + x))
+		b.answer.add = (x, y) => x + y
+		a.answer.double = (x) => x + x
 
 		assert.equal(await a.call.add(10, 2), 12)
 		assert.equal(await b.call.double(10), 20)
 	})
 
-	it("Throws an error if you try to add two answerers", () => {
+	it("throw an error if there are no listeners", async () => {
 		const { a, b } = setupPeers()
-		a.answer.something(() => {})
+		b.answer.add = (x, y) => x + y
+		assert.equal(await a.call.add(10, 2), 12)
+		await assert.rejects(() => a.call.double(10))
 	})
 
-	it.skip("Stop listening works", async () => {})
-	it.skip("Destroy works", async () => {})
+	it("stop listening works", async () => {
+		const { a, b } = setupPeers()
+		b.answer.add = (x, y) => x + y
+		assert.equal(await a.call.add(10, 2), 12)
 
-	it.skip("Throws an error if you try to answer more than once", async () => {})
+		delete b.answer.add
+		await assert.rejects(() => a.call.add(10, 2))
+	})
 
-	it("Deserializes error with combined stack traces.", async () => {
-		type A = {
-			doSomething(): void
+	it("rethrows error", async () => {
+		const { a, b } = setupPeers()
+
+		b.answer.doSomething = () => {
+			throw new Error("error")
 		}
 
-		type B = {}
+		await assert.rejects(() => a.call.doSomething())
+	})
 
-		const { a, b } = setupPeers<A, B>()
+	it("deserializes error with combined stack traces.", async () => {
+		const { a, b } = setupPeers()
 
 		function somethingHelper() {
 			throw new Error("error")
 		}
 
-		const stopB = b.answer.doSomething(() => {
+		b.answer.doSomething = () => {
 			somethingHelper()
-		})
-		after(stopB)
+		}
 
 		try {
 			await a.call.doSomething()
@@ -108,19 +127,5 @@ describe("PeerRPC", () => {
 		}
 	})
 
-	it("Rethrows error", async () => {
-		type A = {
-			doSomething(): void
-		}
-
-		type B = {}
-
-		const { a, b } = setupPeers<A, B>()
-		const stopB = b.answer.doSomething(() => {
-			throw new Error("error")
-		})
-		after(stopB)
-
-		await assert.rejects(() => a.call.doSomething())
-	})
+	it.skip("destroy works", async () => {})
 })
